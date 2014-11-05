@@ -38,7 +38,38 @@
     <%- end -%>
     <%- if scope.function_versioncmp([@apache_version, '2.4']) >= 0 -%>
       <%- if directory['require'] and directory['require'] != '' -%>
-    Require <%= Array(directory['require']).join(' ') %>
+        <%- if directory['require'].is_a?(Hash) -%>
+          <%- dir_req = [directory['require']] -%>
+        <%- else -%>
+          <%- dir_req = Array(directory['require']) -%>
+        <%- end -%>
+        <%- dir_req.each do |req| -%>
+          <%- if req.is_a?(Hash) -%>
+            <%- enforce = req['enforce'] -%>
+            <%- if enforce && enforce !~ /^(all|any)$/i -%>
+              <%- scope.function_warning("Valid values for the `enforce` key in `require` under `directories` are 'all' or 'any', skipping unknown value #{enforce}") -%>
+              <%- req_enforce = '' -%>
+            <%- elsif enforce -%>
+              <%- req_enforce = 'Require' + enforce.capitalize -%>
+            <%- else -%>
+              <%- req_enforce = '' -%>
+            <%- end -%>
+            <%- requires = req['requires'] -%>
+            <%- if requires && req_enforce != '' -%>
+    <<%= req_enforce %>>
+              <%- Array(requires).each do |r| -%>
+      Require <%= r %>
+              <%- end -%>
+    </<%= req_enforce %>>
+            <%- elsif requires -%>
+              <%- Array(requires).each do |r| -%>
+    Require <%= r %>
+              <%- end -%>
+            <%- end -%>
+          <%- else -%>
+    Require <%= Array(req).join(' ') %>
+          <%- end -%>
+        <%- end -%>
       <%- end -%>
       <%- if directory['auth_require'] -%>
     Require <%= directory['auth_require'] %>
