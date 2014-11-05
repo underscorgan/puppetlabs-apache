@@ -1705,6 +1705,36 @@ Sets the value for the [PassengerEnabled](http://www.modrails.com/documentation/
 
 `php_admin_value` sets the value of the directory, and `php_admin_flag` uses a boolean to configure the directory. Further information can be found [here](http://php.net/manual/en/configuration.changes.php).
 
+######`require`
+
+Allows you to add `Require` statements to directory blocks in Apache >= 2.4. Valid values are strings, arrays, and hashes.
+
+######`rewrites`
+
+Creates URL [`rewrites`](#rewrites) rules in vhost directories. Expects an array of hashes, and the hash keys can be any of 'comment', 'rewrite_base', 'rewrite_cond', or 'rewrite_rule'.
+
+```puppet
+    apache::vhost { 'secure.example.net':
+      docroot     => '/path/to/directory',
+      directories => [
+        { path        => '/path/to/directory',
+          rewrites => [ { comment      => 'Permalink Rewrites',
+                          rewrite_base => '/'
+                        },
+                        { rewrite_rule => [ '^index\.php$ - [L]' ]
+                        },
+                        { rewrite_cond => [ '%{REQUEST_FILENAME} !-f',
+                                            '%{REQUEST_FILENAME} !-d',
+                                          ],
+                          rewrite_rule => [ '. /index.php [L]' ],
+                        }
+                      ],
+        },
+      ],
+    }
+```
+
+***Note*** If you include rewrites in your directories make sure you are also including `apache::mod::rewrite`. You may also want to consider setting the rewrites using the `rewrites` parameter in `apache::vhost` rather than setting the rewrites in the vhost directories.
 
 ######`satisfy`
 
@@ -1735,33 +1765,6 @@ Sets a `SetHandler` directive as per the [Apache Core documentation](http://http
       ],
     }
 ```
-
-######`rewrites`
-
-Creates URL [`rewrites`](#rewrites) rules in vhost directories. Expects an array of hashes, and the hash keys can be any of 'comment', 'rewrite_base', 'rewrite_cond', or 'rewrite_rule'.
-
-```puppet
-    apache::vhost { 'secure.example.net':
-      docroot     => '/path/to/directory',
-      directories => [
-        { path        => '/path/to/directory',
-          rewrites => [ { comment      => 'Permalink Rewrites',
-                          rewrite_base => '/'
-                        },
-                        { rewrite_rule => [ '^index\.php$ - [L]' ]
-                        },
-                        { rewrite_cond => [ '%{REQUEST_FILENAME} !-f',
-                                            '%{REQUEST_FILENAME} !-d',
-                                          ],
-                          rewrite_rule => [ '. /index.php [L]' ],
-                        }
-                      ],
-        },
-      ],
-    }
-```
-
-***Note*** If you include rewrites in your directories make sure you are also including `apache::mod::rewrite`. You may also want to consider setting the rewrites using the `rewrites` parameter in `apache::vhost` rather than setting the rewrites in the vhost directories.
 
 ######`shib_request_setting`
 
