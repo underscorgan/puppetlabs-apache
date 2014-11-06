@@ -40,6 +40,8 @@
       <%- if directory['require'] and directory['require'] != '' -%>
         <%- if directory['require'].is_a?(Hash) -%>
           <%- dir_req = [directory['require']] -%>
+        <%- elsif directory['require'].is_a?(Array) and not directory['require'].first.is_a?(Hash) -%>
+          <%- dir_req = Array(directory['require'].join(' ')) -%>
         <%- else -%>
           <%- dir_req = Array(directory['require']) -%>
         <%- end -%>

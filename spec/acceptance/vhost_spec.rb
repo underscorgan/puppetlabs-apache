@@ -212,11 +212,18 @@ describe 'apache::vhost define', :unless => UNSUPPORTED_PLATFORMS.include?(fact(
           class { 'apache': }
 
           if versioncmp($apache::apache_version, '2.4') >= 0 {
-            $_files_match_directory = { 'path' => 'private.html$', 'provider' => 'filesmatch', 'require' => 'all denied' }
+            $_files_match_directory = [
+              { 'path' => 'private.html$', 'provider' => 'filesmatch', 'require' => 'all denied' },
+              { 'path' => '/bar/bar.html', 'provider' => 'location', 'require' => [ 'ip', '10.', '127.0.0.1'] },
+              { 'path' => '/bar/foo.html', 'provider' => 'location', 'require' => { enforce => 'all', requires => [ 'all denied', 'ip 127.0.0.1']} },
+              { 'path' => '/bar/baz.html', 'provider' => 'location', 'require' => { enforce => 'any', requires => [ 'all denied', 'ip 127.0.0.1']} },
+            ]
           } else {
             $_files_match_directory = [
               { 'path' => 'private.html$', 'provider' => 'filesmatch', 'deny' => 'from all' },
               { 'path' => '/bar/bar.html', 'provider' => 'location', allow => [ 'from 127.0.0.1', ] },
+              { 'path' => '/bar/foo.html', 'provider' => 'location', 'deny' => 'from all' },
+              { 'path' => '/bar/baz.html', 'provider' => 'location', 'deny' => 'from all' },
             ]
           }
 
@@ -248,6 +255,14 @@ describe 'apache::vhost define', :unless => UNSUPPORTED_PLATFORMS.include?(fact(
             ensure  => file,
             content => "Hello Bar\\n",
           }
+          file { '/var/www/files/bar/foo.html':
+            ensure  => file,
+            content => "Hello FooBar\\n",
+          }
+          file { '/var/www/files/bar/baz.html':
+            ensure  => file,
+            content => "Hello BarBaz\\n",
+          }
           host { 'files.example.net': ip => '127.0.0.1', }
         EOS
         apply_manifest(pp, :catch_failures => true)
@@ -263,6 +278,8 @@ describe 'apache::vhost define', :unless => UNSUPPORTED_PLATFORMS.include?(fact(
         expect(shell("/usr/bin/curl -sSf files.example.net:80/foo/").stdout).to eq("Hello Foo\n")
         expect(shell("/usr/bin/curl -sSf files.example.net:80/private.html", {:acceptable_exit_codes => 22}).stderr).to match(/curl: \(22\) The requested URL returned error: 403/)
         expect(shell("/usr/bin/curl -sSf files.example.net:80/bar/bar.html").stdout).to eq("Hello Bar\n")
+        expect(shell("/usr/bin/curl -sSf files.example.net:80/bar/foo.html", {:acceptable_exit_codes => 22}).stderr).to match(/curl: \(22\) The requested URL returned error: 403/)
+        expect(shell("/usr/bin/curl -sSf files.example.net:80/bar/baz.html").stdout).to eq("Hello BarBaz\n")
       end
     end
 
