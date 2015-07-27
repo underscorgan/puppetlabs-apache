@@ -69,8 +69,10 @@ describe 'apache::mod::security class', :unless => (UNSUPPORTED_PLATFORMS.includ
           expect(r.exit_code).to eq(0)
         end
       end
+    end
 
-      it 'should block query with SQL' do
+    describe 'should be block query with sql' do
+      it 'should exit 22' do
         shell '/usr/bin/curl -A beaker -f modsec.example.com:80?SELECT%20*FROM%20mysql.users', :acceptable_exit_codes => [22]
       end
     end
